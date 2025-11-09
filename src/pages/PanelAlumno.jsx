@@ -1,17 +1,18 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import Tobi from "../components/Tobi";
+import TobiMensaje from "../components/TobiMensaje";
 
 export default function PanelAlumno() {
   const [nombre, setNombre] = useState("");
   const [tema, setTema] = useState("default");
   const [progreso, setProgreso] = useState(0);
   const [tareas, setTareas] = useState([]);
+  const [mostrarTobi, setMostrarTobi] = useState(false);
+  const [mensajeTobi, setMensajeTobi] = useState("");
+
   const token = localStorage.getItem("token");
   const alumno_id = localStorage.getItem("alumno_id");
-  
 
-  // Temas visuales
   const temas = {
     default: "from-blue-100 to-blue-50 text-blue-700",
     activo: "from-yellow-100 to-yellow-50 text-yellow-700",
@@ -23,8 +24,6 @@ export default function PanelAlumno() {
   useEffect(() => {
     setNombre(localStorage.getItem("nombre"));
     setTema(localStorage.getItem("tema") || "default");
-
-    // Cargar progreso y tareas
     obtenerProgresoYTareas();
   }, []);
 
@@ -36,77 +35,131 @@ export default function PanelAlumno() {
       );
       setProgreso(data.progreso);
       setTareas(data.tareas);
+
+      // Mostrar mensaje inicial de motivación
+      let mensaje = "";
+      if (data.progreso < 30) mensaje = "¡Vamos, tú puedes lograrlo! 💪";
+      else if (data.progreso < 70)
+        mensaje = "¡Buen trabajo, sigue concentrado! 🌟";
+      else mensaje = "¡Impresionante progreso, excelente trabajo! 🦊🎉";
+
+      if (data.progreso > 0 || data.tareas.length > 0) {
+        mostrarMensajeTobi(mensaje);
+      }
     } catch (error) {
-      console.error("Error cargando datos del panel:", error);
+      console.error("Error al cargar datos del panel:", error);
     }
   };
 
+const completarTarea = async (tareaId) => {
+  try {
+    await axios.put(
+      `http://localhost:4000/api/tareas/${tareaId}`,
+      { completada: 1, alumno_id },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    // 🔼 Muestra a Tobi felicitando por la tarea y el progreso
+    mostrarMensajeTobi(`¡Excelente trabajo, ${nombre}! Has subido tu progreso 🎯`);
+
+    // Recargar tareas y progreso actualizados
+    obtenerProgresoYTareas();
+  } catch (error) {
+    console.error("Error al completar tarea:", error);
+  }
+};
+
+  const mostrarMensajeTobi = (mensaje) => {
+    setMensajeTobi(mensaje);
+    setMostrarTobi(true);
+    setTimeout(() => setMostrarTobi(false), 6000);
+  };
+
   return (
-    <div
-      className={`min-h-screen bg-gradient-to-b ${temas[tema]} flex flex-col items-center`}
-    >
-      <div className="w-full bg-white shadow-md py-4 text-center">
-        <h1 className="text-3xl font-bold text-blue-700">
-          ¡Hola, {nombre}! 👋
-        </h1>
-        <p className="text-gray-600">Bienvenido a tu panel de aprendizaje</p>
-      </div>
-
-      <div className="w-full max-w-3xl mt-6 p-6">
-        <div className="bg-white rounded-2xl shadow-md p-6 text-center">
-          <h2 className="text-xl font-semibold mb-3 text-gray-700">
-            Tu progreso general 📈
-          </h2>
-          <div className="w-full bg-gray-200 rounded-full h-5">
-            <div
-              className="bg-green-500 h-5 rounded-full transition-all duration-700"
-              style={{ width: `${progreso}%` }}
-            ></div>
-          </div>
-          <p className="mt-2 text-sm text-gray-500">
-            {progreso}% completado
-          </p>
+    <>
+      <div
+        className={`min-h-screen bg-gradient-to-b ${temas[tema]} flex flex-col items-center`}
+      >
+        <div className="w-full bg-white shadow-md py-4 text-center">
+          <h1 className="text-3xl font-bold text-blue-700">
+            ¡Hola, {nombre}! 👋
+          </h1>
+          <p className="text-gray-600">Bienvenido a tu panel de aprendizaje</p>
         </div>
 
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-white rounded-2xl shadow-md p-5">
-            <h3 className="text-lg font-semibold text-gray-700 mb-2">
-              🧩 Tareas del día
-            </h3>
-            {tareas.length > 0 ? (
+        <div className="w-full max-w-3xl mt-6 p-6">
+          <div className="bg-white rounded-2xl shadow-md p-6 text-center">
+            <h2 className="text-xl font-semibold mb-3 text-gray-700">
+              Tu progreso general 📈
+            </h2>
+            <div className="w-full bg-gray-200 rounded-full h-5">
+              <div
+                className="bg-green-500 h-5 rounded-full transition-all duration-700"
+                style={{ width: `${progreso}%` }}
+              ></div>
+            </div>
+            <p className="mt-2 text-sm text-gray-500">{progreso}% completado</p>
+          </div>
+
+          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-white rounded-2xl shadow-md p-5">
+              <h3 className="text-lg font-semibold text-gray-700 mb-2">
+                🧩 Tareas del día
+              </h3>
+              {tareas.length > 0 ? (
+                <ul className="text-left space-y-2">
+                  {tareas.map((tarea) => (
+                    <li
+                      key={tarea.id}
+                      className={`p-3 rounded-lg border-l-4 flex justify-between items-center ${
+                        tarea.completada
+                          ? "bg-green-50 border-green-400 text-green-700"
+                          : "bg-blue-50 border-blue-400"
+                      }`}
+                    >
+                      <span>{tarea.descripcion}</span>
+                      {!tarea.completada && (
+                        <button
+                          onClick={() => completarTarea(tarea.id)}
+                          className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-md text-sm"
+                        >
+                          Completar
+                        </button>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-gray-500 text-sm">
+                  No tienes tareas asignadas por ahora 🎉
+                </p>
+              )}
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-md p-5">
+              <h3 className="text-lg font-semibold text-gray-700 mb-2">
+                🎁 Recompensas
+              </h3>
               <ul className="text-left space-y-2">
-                {tareas.map((tarea, i) => (
-                  <li
-                    key={i}
-                    className="p-3 bg-blue-50 rounded-lg border-l-4 border-blue-400"
-                  >
-                    {tarea.descripcion}
-                  </li>
-                ))}
+                <li className="p-3 bg-green-50 rounded-lg border-l-4 border-green-400">
+                  ¡Excelente concentración hoy! ⭐
+                </li>
+                <li className="p-3 bg-yellow-50 rounded-lg border-l-4 border-yellow-400">
+                  Has mantenido tu constancia 3 días seguidos 🎯
+                </li>
               </ul>
-            ) : (
-              <p className="text-gray-500 text-sm">
-                No tienes tareas asignadas por ahora 🎉
-              </p>
-            )}
-          </div>
-
-          <div className="bg-white rounded-2xl shadow-md p-5">
-            <h3 className="text-lg font-semibold text-gray-700 mb-2">
-              🎁 Recompensas
-            </h3>
-            <ul className="text-left space-y-2">
-              <li className="p-3 bg-green-50 rounded-lg border-l-4 border-green-400">
-                ¡Excelente concentración hoy! ⭐
-              </li>
-              <li className="p-3 bg-yellow-50 rounded-lg border-l-4 border-yellow-400">
-                Has mantenido tu constancia 3 días seguidos 🎯
-              </li>
-            </ul>
+            </div>
           </div>
         </div>
       </div>
-      <Tobi nombre={nombre} tema={tema} />
-    </div>
+
+      {/* 🦊 Tobi aparece en momentos clave */}
+      {mostrarTobi && (
+        <TobiMensaje
+          mensaje={mensajeTobi}
+          onClose={() => setMostrarTobi(false)}
+        />
+      )}
+    </>
   );
 }

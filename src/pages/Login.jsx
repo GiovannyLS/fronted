@@ -31,6 +31,7 @@ export default function Login() {
   console.warn("⚠️ No se recibió alumno_id desde el backend");
 }
 
+
       setTimeout(() => {
         switch (data.user.rol) {
           case 1:
@@ -44,7 +45,10 @@ export default function Login() {
             window.location.href = "/panel-padre";
             break;
           case 3:
+            if (data.user.rol === 3) {
+              localStorage.setItem("maestro_id", data.user.maestro_id); // 👈 importante
             window.location.href = "/panel-maestro";
+            }
             break;
           case 4:
             window.location.href = "/panel-directivo";
