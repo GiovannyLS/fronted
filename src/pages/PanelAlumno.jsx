@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import TobiMensaje from "../components/TobiMensaje";
+import Tobi from "../components/Tobi";
 
 export default function PanelAlumno() {
   const [nombre, setNombre] = useState("");
@@ -82,7 +83,7 @@ const completarTarea = async (tareaId) => {
       >
         <div className="w-full bg-white shadow-md py-4 text-center">
           <h1 className="text-3xl font-bold text-blue-700">
-            ¡Hola, {nombre}! 👋
+            ¡Hola, {nombre}! 
           </h1>
           <p className="text-gray-600">Bienvenido a tu panel de aprendizaje</p>
         </div>
@@ -153,13 +154,17 @@ const completarTarea = async (tareaId) => {
         </div>
       </div>
 
-      {/* 🦊 Tobi aparece en momentos clave */}
+    {/*Tobi se muestra en algunas ocaciones */}
       {mostrarTobi && (
         <TobiMensaje
           mensaje={mensajeTobi}
           onClose={() => setMostrarTobi(false)}
         />
       )}
+      {/* Tobi siempre se muestra */}
+      <Tobi nombre = {nombre}> 
+      </Tobi>
+      
     </>
   );
 }
