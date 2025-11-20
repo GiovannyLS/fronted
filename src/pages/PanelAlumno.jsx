@@ -154,13 +154,13 @@ const completarTarea = async (tareaId) => {
         </div>
       </div>
 
-    {/*Tobi se muestra en algunas ocaciones */}
+    {/*Tobi se muestra en algunas ocaciones 
       {mostrarTobi && (
         <TobiMensaje
           mensaje={mensajeTobi}
           onClose={() => setMostrarTobi(false)}
         />
-      )}
+      )}*/}
       {/* Tobi siempre se muestra */}
       <Tobi nombre = {nombre}> 
       </Tobi>
