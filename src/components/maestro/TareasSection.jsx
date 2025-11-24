@@ -24,7 +24,8 @@ export default function TareasSection({
   onPedirEliminar,
   formatFecha,
   onAbrirModalNueva,
-  onEditar,  
+  onEditar,
+  onAbrirModalJuegoInteractivo,
 }) {
   // Campos de edición locales
   const [editFields, setEditFields] = useState({
@@ -88,13 +89,21 @@ export default function TareasSection({
             className="border rounded-md p-2 text-sm w-full md:w-64 focus:ring-2 focus:ring-blue-400"
           />
 
-          <button
-            onClick={onAbrirModalNueva}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2 shadow-sm text-sm"
-          >
-            <Plus size={18} />
-            Nueva tarea
-          </button>
+<button
+  onClick={onAbrirModalNueva}
+  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2 shadow-sm text-sm"
+>
+  <Plus size={18} />
+  Nueva tarea
+</button>
+
+<button
+  onClick={onAbrirModalJuegoInteractivo}
+  className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md flex items-center gap-2 shadow-sm text-sm"
+>
+  <Plus size={18} />
+  Juego interactivo
+</button>
         </div>
       </div>
 
@@ -125,6 +134,16 @@ export default function TareasSection({
                       <p className="text-sm text-gray-600 line-clamp-3">
                         {t.descripcion}
                       </p>
+                      {t.asignados && t.asignados.length > 0 && (
+                        <div className="mt-2 bg-blue-50 border border-blue-100 rounded-md p-2 text-xs text-blue-700">
+                          <b>Asignada a:</b>
+                          <ul className="list-disc ml-4 mt-1">
+                            {t.asignados.map((al) => (
+                              <li key={al.id}>{al.nombre}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex flex-col gap-2">

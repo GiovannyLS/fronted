@@ -20,6 +20,7 @@ import HistorialAlumnoModal from "../components/maestro/HistorialAlumnoModal";
 import ToastsContainer from "../components/maestro/ToastsContainer";
 import ModalEditarTarea from "../components/maestro/ModalEditarTarea";
 import ResultadosModal from "../components/maestro/ResultadosModal";
+import ModalCrearJuego from "../components/maestro/ModalCrearJuego";
 
 const ITEMS_PER_PAGE = 9;
 
@@ -52,15 +53,24 @@ export default function PanelMaestro() {
   const [resultadosTarea, setResultadosTarea] = useState([]);
   const [tareasResultados, setTareasResultados] = useState([]);
 
-  // Formularios
-  const [nuevoJuego, setNuevoJuego] = useState({
+  const [modalJuegoInteractivo, setModalJuegoInteractivo] = useState(false);
+
+  const [nuevoJuegoInteractivo, setNuevoJuegoInteractivo] = useState({
     grupo_id: "",
-    alumno_id: "",
+    titulo: "",
+    tipo: "visual",
+    instrucciones: "",
+    contenido: {},
+  });
+
+  // Formularios
+const [nuevoJuego, setNuevoJuego] = useState({
+    grupo_id: "",
     titulo: "",
     descripcion: "",
     puntos: 10,
     fecha_entrega: "",
-  });
+});
 
   const [mostrarModalJuego, setMostrarModalJuego] = useState(false);
   const [mostrarConfirmEliminar, setMostrarConfirmEliminar] = useState(false);
@@ -163,20 +173,24 @@ export default function PanelMaestro() {
     }
   };
 
-  const crearTarea = async () => {
-    try {
-      await axios.post(
-        "http://localhost:4000/api/maestro/tareas",
-        nuevoJuego,
-        { headers }
-      );
-      ok("Tarea creada");
-      setMostrarModalJuego(false);
-      cargarTareas();
-    } catch {
-      fail("No se pudo crear");
-    }
-  };
+const crearTarea = async (data) => {
+  try {
+    console.log("📨 ENVIANDO TAREA:", data);
+
+    await axios.post(
+      "http://localhost:4000/api/maestro/tareas",
+      data,
+      { headers }
+    );
+
+    ok("Tarea creada correctamente");
+    setMostrarModalJuego(false);
+    cargarTareas();
+  } catch (e) {
+    console.error("❌ Error al crear tarea:", e.response?.data || e);
+    fail("No se pudo crear la tarea");
+  }
+};
 
 const guardarEdicionTarea = async () => {
   try {
@@ -280,6 +294,26 @@ const guardarEdicionTarea = async () => {
   } catch (error) {
     console.error(error);
     fail("Error al cargar los resultados");
+  }
+};
+
+const crearTareaJuego = async (formData) => {
+  console.log("📩 RECIBIDO DESDE MODAL:", formData);
+
+  try {
+    const response = await axios.post(
+      "http://localhost:4000/api/maestro/juegos-interactivos",
+      formData,
+      { headers }
+    );
+
+    console.log("📦 RESPUESTA SERVIDOR:", response.data);
+
+    ok("Juego creado correctamente");
+    cargarTareas();
+  } catch (error) {
+    console.log("❌ ERROR backend:", error.response?.data || error);
+    fail("Error al crear el juego interactivo");
   }
 };
 
@@ -399,6 +433,7 @@ const guardarEdicionTarea = async () => {
             onAbrirModalNueva={() => setMostrarModalJuego(true)}
             onEditar={abrirModalEditarTarea}
             onAbrirModalResultados={onAbrirResultados}
+            onAbrirModalJuegoInteractivo={() => setModalJuegoInteractivo(true)}
           />
         )}
 
@@ -423,7 +458,7 @@ const guardarEdicionTarea = async () => {
         nuevoJuego={nuevoJuego}
         setNuevoJuego={setNuevoJuego}
         grupos={grupos}
-        onSubmit={crearTarea}
+        onSubmit={(data) => crearTarea(data)}
       />
 
       <ModalConfirmacion
@@ -450,6 +485,15 @@ const guardarEdicionTarea = async () => {
         resultados={resultadosTarea}
         busqueda={busquedaModalResultados}
         setBusqueda={setBusquedaModalResultados}
+      />
+
+      <ModalCrearJuego
+        open={modalJuegoInteractivo}
+        onClose={() => setModalJuegoInteractivo(false)}
+        grupos={grupos}
+        nuevoJuego={nuevoJuegoInteractivo}
+        setNuevoJuego={setNuevoJuegoInteractivo}
+        onSubmit={(formData) => crearTareaJuego(formData)}
       />
 
       <HistorialAlumnoModal
