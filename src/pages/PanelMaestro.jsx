@@ -22,6 +22,7 @@ import ModalEditarTarea from "../components/maestro/ModalEditarTarea";
 import ResultadosModal from "../components/maestro/ResultadosModal";
 import ModalCrearJuego from "../components/maestro/ModalCrearJuego";
 
+
 const ITEMS_PER_PAGE = 9;
 
 export default function PanelMaestro() {
@@ -289,6 +290,8 @@ const guardarEdicionTarea = async () => {
       `http://localhost:4000/api/maestro/tarea/${tarea.id}/resultados`,
       { headers }
     );
+
+      console.log("➡ Abriendo modal con tarea:", tarea);
     setResultadosTarea(data);
     setMostrarModalResultados(true);
   } catch (error) {
@@ -296,6 +299,29 @@ const guardarEdicionTarea = async () => {
     fail("Error al cargar los resultados");
   }
 };
+async function calificarResultado({ tarea_id, alumno_id, calificacion, comentario }) {
+  console.log("📌 Enviando calificación:", { tarea_id, alumno_id, calificacion, comentario });
+
+  try {
+    await axios.put(
+      `http://localhost:4000/api/maestro/tarea/${tarea_id}/calificar`,
+      {
+        alumno_id,
+        calificacion,
+        comentario_maestro: comentario,
+      },
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+
+    alert("Calificación guardada correctamente");
+    cargarTareas(); // recargar lista
+  } catch (error) {
+    console.error("❌ Error al calificar:", error);
+    alert("Error al guardar la calificación");
+  }
+}
 
 const crearTareaJuego = async (formData) => {
   console.log("📩 RECIBIDO DESDE MODAL:", formData);
@@ -485,6 +511,7 @@ const crearTareaJuego = async (formData) => {
         resultados={resultadosTarea}
         busqueda={busquedaModalResultados}
         setBusqueda={setBusquedaModalResultados}
+        onCalificar={calificarResultado}
       />
 
       <ModalCrearJuego

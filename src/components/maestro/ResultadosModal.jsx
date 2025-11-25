@@ -21,7 +21,9 @@ export default function ResultadosModal({
   resultados,
   busqueda,
   setBusqueda,
+  onCalificar,
 }) {
+
   if (!open) return null;
 
   const filtrados = resultados.filter((r) =>
@@ -147,6 +149,60 @@ export default function ResultadosModal({
                         <i>{r.comentario_maestro || "Sin comentarios"}</i>
                       </p>
                     </>
+                  )}
+
+                  {r.completada && !r.calificacion && (
+                    <div className="mt-2 p-2 bg-white border rounded-md">
+                      <label className="text-sm font-semibold text-gray-700">
+                        Calificar alumno:
+                      </label>
+
+                      <input
+                        type="number"
+                        min="0"
+                        max="10"
+                        className="border rounded-md p-1 w-20 ml-2"
+                        onChange={(e) => {
+                          r._califTemp = {
+                            ...(r._califTemp || {}),
+                            calificacion: e.target.value,
+                          };
+                        }}
+                      />
+
+                      <textarea
+                        placeholder="Comentario del maestro..."
+                        className="border rounded-md p-2 w-full text-sm mt-2"
+                        rows={2}
+                        onChange={(e) => {
+                          r._califTemp = {
+                            ...(r._califTemp || {}),
+                            comentario: e.target.value,
+                          };
+                        }}
+                      />
+
+                      <button
+                        className="mt-2 px-3 py-1 bg-green-600 text-white rounded-md text-xs"
+                        onClick={() => {
+  console.log("📌 Guardando calificación:", r._califTemp);
+
+  if (!r._califTemp?.calificacion) {
+    alert("Ingresa una calificación");
+    return;
+  }
+
+  onCalificar({
+    tarea_id: tarea.id,
+    alumno_id: r.alumno_id,
+    calificacion: Number(r._califTemp.calificacion),
+    comentario: r._califTemp.comentario || "",
+  });
+}}
+                      >
+                        Guardar
+                      </button>
+                    </div>
                   )}
                 </div>
               ))}

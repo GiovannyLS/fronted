@@ -623,6 +623,11 @@ const todasConectadas =
                         <span className="text-sm text-gray-600">
                           {tarea.descripcion}
                         </span>
+                        {tarea.completada && tarea.calificacion != null && (
+                          <span className="text-xs text-gray-500 mt-1">
+                            Calificación: {tarea.calificacion}/10
+                          </span>
+                        )}
                       </div>
 
                       {!tarea.completada && (
