@@ -3,7 +3,7 @@ import axios from "axios";
 import TobiMensaje from "../components/TobiMensaje";
 import Tobi from "../components/Tobi"; // (aún no se usa, pero puedes quitarlo si quieres)
 
-// 🔹 Componentes de actividades (tipo de tarea)
+//  Componentes de actividades (tipo de tarea)
 function ActividadTexto({ tarea, onTerminar }) {
   return (
     <div className="space-y-3">
@@ -92,7 +92,7 @@ function ActividadPreguntas({ tarea, onTerminar }) {
   );
 }
 
-// 🔹 Por ahora estos son placeholders; se pueden volver juegos después
+//  Por ahora estos son placeholders; se pueden volver juegos después
 function ActividadConectarLineas({ tarea, onTerminar }) {
   return (
     <div className="space-y-3">
@@ -140,8 +140,7 @@ function ActividadRompecabezas({ tarea, onTerminar }) {
     </div>
   );
 }
-
-// 🔹 Modal genérico para mostrar la actividad de la tarea
+//  Modal genérico para mostrar la actividad de la tarea
 function ModalTarea({ open, onClose, tarea, onTerminar }) {
   if (!open || !tarea) return null;
 
@@ -182,7 +181,7 @@ function ModalTarea({ open, onClose, tarea, onTerminar }) {
 }
 
 /* =========================================================
-   🔹 Helpers para el juego de CONECTAR LÍNEAS
+    Helpers para el juego de CONECTAR LÍNEAS
    ========================================================= */
 function shuffleArray(array) {
   const arr = [...array];
@@ -193,7 +192,7 @@ function shuffleArray(array) {
   return arr;
 }
 
-// 🔹 Modal / juego de conectar líneas
+//  Modal / juego de conectar líneas
 function JuegoConectarLineas({
   tarea,
   respuestasJuego,
@@ -239,7 +238,7 @@ function JuegoConectarLineas({
     const opcion = opcionesDerecha[rightIndex];
     setRespuestasJuego((prev) => {
       const copia = [...prev];
-      copia[selectedLeft] = opcion.label;
+      copia[selectedLeft] = opcion.parIndex;
       return copia;
     });
 
@@ -376,8 +375,142 @@ function JuegoConectarLineas({
   );
 }
 
+//  Modal / juego de MEMORAMA
+function JuegoMemorama({ tarea, onClose, onEnviar }) {
+  const pares = tarea.pares || tarea.contenido?.pares || [];
+
+  // Cada par genera dos tarjetas (a y b)
+  const cartasBase = pares.flatMap((p, i) => [
+    { id: `a-${i}`, par: i, tipo: p.a.tipo, valor: p.a.valor },
+    { id: `b-${i}`, par: i, tipo: p.b.tipo, valor: p.b.valor },
+  ]);
+
+  const cartasBarajadas = useMemo(() => {
+    const copia = [...cartasBase];
+    for (let i = copia.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [copia[i], copia[j]] = [copia[j], copia[i]];
+    }
+    return copia;
+  }, [tarea.id]);
+
+  const [cartas, setCartas] = useState(cartasBarajadas);
+  const [volteadas, setVolteadas] = useState([]); // máx. 2
+  const [encontradas, setEncontradas] = useState([]);
+  const [errores, setErrores] = useState(0);
+
+  // Lógica cuando se voltean dos
+  useEffect(() => {
+    if (volteadas.length === 2) {
+      const [c1, c2] = volteadas;
+
+      if (c1.par === c2.par) {
+        setEncontradas((prev) => [...prev, c1.id, c2.id]);
+      } else {
+        setErrores((e) => e + 1);
+      }
+
+      setTimeout(() => setVolteadas([]), 700);
+    }
+  }, [volteadas]);
+
+  const seleccionar = (carta) => {
+    if (volteadas.length === 2) return;
+    if (volteadas.some((c) => c.id === carta.id)) return;
+    if (encontradas.includes(carta.id)) return;
+    setVolteadas((prev) => [...prev, carta]);
+  };
+
+  const calcularCalificacion = () => {
+    const total = pares.length;
+    const penalizacion = Math.min(errores, total * 2);
+    const score = Math.max(0, 10 - Math.round((penalizacion / (total * 2)) *   10));
+    return score;
+  };
+
+const enviar = () => {
+  // Esperar 100ms para asegurar que React haya aplicado los últimos estados
+  setTimeout(() => {
+    console.log("DEBUG total pares:", pares.length);
+    console.log("DEBUG errores:", errores);
+
+    const calif = calcularCalificacion();
+
+    console.log("DEBUG calificación calculada:", calif);
+
+    onEnviar(calif);
+    onClose();
+  }, 120); // tiempo suficiente para asegurar render
+};
+
+  return (
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+      <div className="bg-white rounded-xl shadow-lg p-6 w-[90%] max-w-3xl">
+        {/* Header */}
+        <div className="flex justify-between items-center border-b pb-2 mb-4">
+          <h3 className="text-lg font-semibold text-blue-700">{tarea.titulo}</h3>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+            Cerrar ✖
+          </button>
+        </div>
+
+        <p className="text-sm text-gray-600 mb-3">
+  {tarea.descripcion || "Encuentra los pares. Cada error resta puntos."}
+</p>
+
+        {/* GRID DEL JUEGO */}
+        <div className="grid grid-cols-4 gap-3">
+          {cartas.map((c) => {
+            const isFlipped = volteadas.some((v) => v.id === c.id);
+            const isFound = encontradas.includes(c.id);
+
+            return (
+              <div
+                key={c.id}
+                onClick={() => seleccionar(c)}
+                className={`border rounded-lg p-3 cursor-pointer flex items-center justify-center h-24 transition
+                  ${
+                    isFound
+                      ? "bg-green-200"
+                      : isFlipped
+                      ? "bg-blue-200"
+                      : "bg-gray-200"
+                  }`}
+              >
+                {(isFlipped || isFound) && (
+                  <>
+                    {c.tipo === "texto" && (
+                      <span className="font-semibold">{c.valor}</span>
+                    )}
+                    {c.tipo === "imagen" && (
+                      <img
+                        src={c.valor}
+                        className="w-16 h-16 object-contain rounded"
+                      />
+                    )}
+                  </>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Botón terminar */}
+        <div className="flex justify-end mt-4">
+          <button
+            onClick={enviar}
+            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md"
+          >
+            Terminar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* =========================================================
-   🔹 Panel del alumno
+    Panel del alumno
    ========================================================= */
 export default function PanelAlumno() {
   const [nombre, setNombre] = useState("");
@@ -423,13 +556,20 @@ export default function PanelAlumno() {
 
       setProgreso(data.progreso);
 
-      const tareasNormalizadas = (data.tareas || []).map((t) => ({
-        ...t,
-        contenido:
-          typeof t.contenido === "string" && t.contenido
-            ? JSON.parse(t.contenido)
-            : t.contenido || null,
-      }));
+      const tareasNormalizadas = (data.tareas || []).map((t) => {
+        let contenido = t.contenido;
+        try {
+          if (typeof contenido === "string") {
+            contenido = JSON.parse(contenido);
+          }
+        } catch (e) {
+          console.error("Error parseando contenido:", e);
+        }
+        return {
+          ...t,
+          contenido,
+        };
+      });
 
       setTareas(tareasNormalizadas);
 
@@ -501,36 +641,39 @@ export default function PanelAlumno() {
      🔹 Flujo del juego CONECTAR LÍNEAS
      ========================================================= */
 
-  const resolverJuegoConectar = async (tareaId) => {
-    try {
+const resolverJuegoConectar = async (tareaId) => {
+  try {
+    console.log("🔎 LLAMANDO A RUTA:", `http://localhost:4000/api/alumnos/tareas/${tareaId}`);
 
-      console.log("🔎 LLAMANDO A RUTA:", `http://localhost:4000/api/alumnos/tareas/${tareaId}`);
-      const { data } = await axios.get(
-        `http://localhost:4000/api/alumnos/tareas/${tareaId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+    const { data } = await axios.get(
+      `http://localhost:4000/api/alumnos/tareas/${tareaId}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
 
-      if (data.tipo !== "conectar_lineas") return;
+    // Normalizar porque la BD puede almacenar “conectar-lineas”
+    const tipoNormalizado = data.tipo?.replace("-", "_");
 
-      const pares = data.contenido?.pares || [];
-
-      // ¿Todas las posiciones tienen una respuesta no vacía?
-const todasConectadas =
-  pares.length > 0 &&
-  respuestasJuego.filter((r) => r && String(r).trim() !== "").length ===
-    pares.length;
-      setTareaEnJuego({
-        id: data.id,
-        titulo: data.titulo,
-        puntos: data.puntos,
-        pares,
-        contenido: data.contenido,
-      });
-      setRespuestasJuego(Array(pares.length).fill(""));
-    } catch (error) {
-      console.error("Error al cargar juego:", error);
+    if (tipoNormalizado !== "conectar_lineas") {
+      console.warn("❌ Tipo incorrecto recibido:", data.tipo);
+      return;
     }
-  };
+
+    const pares = data.contenido?.pares || [];
+
+    setTareaEnJuego({
+      id: data.id,
+      titulo: data.titulo,
+      puntos: data.puntos,
+      tipo: "conectar_lineas",
+      pares,
+      contenido: data.contenido,
+    });
+
+    setRespuestasJuego(Array(pares.length).fill(""));
+  } catch (error) {
+    console.error("Error al cargar juego:", error);
+  }
+};
 
   const enviarJuegoConectar = async () => {
     if (!tareaEnJuego) return;
@@ -564,6 +707,42 @@ const todasConectadas =
       console.error("Error al enviar juego:", error);
     }
   };
+const enviarCalificacion = async (tareaId, calificacion) => {
+  try {
+    const payload = { calificacion };
+
+    console.log("📤 Enviando calificación memorama:", payload);
+
+    await axios.post(
+      `http://localhost:4000/api/alumnos/tareas/${tareaId}/memorama`,
+      payload,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    mostrarMensajeTobi(`¡Buen trabajo! Sacaste ${calificacion}/10 🎉`);
+    obtenerProgresoYTareas();
+  } catch (e) {
+    console.error("❌ Error guardando calificación de memorama:", e);
+  }
+};
+
+const jugarMemorama = (tarea) => {
+  console.log("DEBUG tarea:", tarea);
+  console.log("DEBUG tarea.contenido:", tarea.contenido);
+
+  const contenido = tarea.contenido;
+  const pares = contenido?.pares;
+
+  console.log("DEBUG pares:", pares);
+
+  if (!contenido || !Array.isArray(pares) || pares.length === 0) {
+    console.error("❌ La tarea no tiene pares válidos. contenido =", contenido);
+    return;
+  }
+
+  // aquí ya puedes montar el grid del memorama con esos pares
+};
+
 
   return (
     <>
@@ -628,11 +807,52 @@ const todasConectadas =
                             Calificación: {tarea.calificacion}/10
                           </span>
                         )}
+                        <p className="text-xs text-gray-600 italic">
+  Comentario: {tarea.comentario_maestro || "Sin comentario"}
+</p>
                       </div>
 
                       {!tarea.completada && (
-                        <>
-                          {tarea.tipo === "conectar_lineas" ? (
+                        <>{tarea.tipo === "memorama" ? (
+                              <button
+onClick={() => {
+  console.log("DEBUG tarea:", tarea);
+  console.log("DEBUG tarea.contenido:", tarea?.contenido);
+  console.log("DEBUG typeof contenido:", typeof tarea?.contenido);
+
+  const contenido = tarea?.contenido;
+
+  // Verificar si contenido existe y tiene pares
+  const pares =
+    contenido && typeof contenido === "object"
+      ? contenido.pares
+      : null;
+
+  console.log("DEBUG pre-check pares:", pares);
+  console.log("DEBUG tarea.raw:", tarea);
+
+  if (!pares || !Array.isArray(pares) || pares.length === 0) {
+    console.error("❌ La tarea no tiene pares válidos. contenido =", contenido);
+    return;
+  }
+
+setTareaEnJuego(null);
+setTimeout(() => {
+  setTareaEnJuego({
+    id: tarea.id,
+    titulo: tarea.titulo,
+    descripcion: tarea.descripcion,
+    tipo: "memorama",
+    pares,
+    contenido,
+  });
+}, 20);
+}}
+    className="bg-purple-500 hover:bg-purple-600 text-white px-3 py-1 rounded-md text-sm"
+  >
+    Jugar memorama
+  </button>
+                          ):tarea.tipo === "conectar_lineas" ? (
                             <button
                               onClick={() => resolverJuegoConectar(tarea.id)}
                               className="bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-1 rounded-md text-sm"
@@ -686,7 +906,7 @@ const todasConectadas =
       )}
 
       {/* Modal juego conectar líneas */}
-      {tareaEnJuego && (
+      {tareaEnJuego && tareaEnJuego.tipo === "conectar_lineas" && (
         <JuegoConectarLineas
           tarea={tareaEnJuego}
           respuestasJuego={respuestasJuego}
@@ -695,6 +915,14 @@ const todasConectadas =
           onEnviar={enviarJuegoConectar}
         />
       )}
+      {/* Modal juego memorama */}
+      {tareaEnJuego && tareaEnJuego.tipo === "memorama" && (
+  <JuegoMemorama
+    tarea={tareaEnJuego}
+    onClose={() => setTareaEnJuego(null)}
+    onEnviar={(calif) => enviarCalificacion(tareaEnJuego.id, calif)}
+  />
+)}
 
       {/* Modal de la tarea “normal” */}
       <ModalTarea

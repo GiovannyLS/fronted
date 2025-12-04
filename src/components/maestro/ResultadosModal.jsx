@@ -22,6 +22,7 @@ export default function ResultadosModal({
   busqueda,
   setBusqueda,
   onCalificar,
+  onVerHistorial,
 }) {
 
   if (!open) return null;
@@ -38,6 +39,7 @@ export default function ResultadosModal({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          onClick={onClose}
         >
           {/* MODAL */}
           <motion.div
@@ -46,6 +48,7 @@ export default function ResultadosModal({
             exit={{ scale: 0.9, opacity: 0 }}
             transition={{ duration: 0.2 }}
             className="bg-white w-full max-w-3xl rounded-2xl shadow-lg p-6 relative"
+            onClick={(e) => e.stopPropagation()}
           >
             {/* Cerrar */}
             <button
@@ -198,10 +201,18 @@ export default function ResultadosModal({
     calificacion: Number(r._califTemp.calificacion),
     comentario: r._califTemp.comentario || "",
   });
+  onClose();
 }}
                       >
                         Guardar
                       </button>
+
+                      <button
+  className="px-2 py-1 text-xs bg-indigo-100 text-indigo-700 rounded hover:bg-indigo-200"
+  onClick={() => onVerHistorial(r)}
+>
+  🗂 Ver historial
+</button>
                     </div>
                   )}
                 </div>

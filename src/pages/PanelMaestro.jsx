@@ -108,6 +108,9 @@ const [nuevoJuego, setNuevoJuego] = useState({
 
   const [mostrarModalEditar, setMostrarModalEditar] = useState(false);
 
+  const [recomendacionesAlumno, setRecomendacionesAlumno] = useState(null);
+  const [modalJuegoOpen, setModalJuegoOpen] = useState(false);
+
   // Seguridad
   useEffect(() => {
     if (!token || rol !== 3) window.location.href = "/";
@@ -343,6 +346,22 @@ const crearTareaJuego = async (formData) => {
   }
 };
 
+const abrirHistorialAlumno = async (alumno) => {
+  setAlumnoHistorial(alumno);
+  setMostrarHistorialAlumno(true);
+
+  try {
+    const { data } = await axios.get(
+      `http://localhost:4000/api/maestro/alumno/${alumno.alumno_id}/recomendaciones`,
+      { headers }
+    );
+    setRecomendacionesAlumno(data);
+  } catch (e) {
+    console.error(e);
+    setRecomendacionesAlumno(null);
+  }
+};
+
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-50">
@@ -459,7 +478,11 @@ const crearTareaJuego = async (formData) => {
             onAbrirModalNueva={() => setMostrarModalJuego(true)}
             onEditar={abrirModalEditarTarea}
             onAbrirModalResultados={onAbrirResultados}
-            onAbrirModalJuegoInteractivo={() => setModalJuegoInteractivo(true)}
+            onAbrirModalJuegoInteractivo={() => {
+  console.log("🔥 Abriendo modal de juego interactivo");
+  setModalJuegoInteractivo(true);
+}}
+            
           />
         )}
 
@@ -512,6 +535,7 @@ const crearTareaJuego = async (formData) => {
         busqueda={busquedaModalResultados}
         setBusqueda={setBusquedaModalResultados}
         onCalificar={calificarResultado}
+        onVerHistorial={abrirHistorialAlumno}
       />
 
       <ModalCrearJuego
@@ -529,6 +553,7 @@ const crearTareaJuego = async (formData) => {
         alumno={alumnoHistorial}
         historial={historialAlumno}
         formatFecha={formatFecha}
+        recomendaciones={recomendacionesAlumno}
       />
     </div>
   );

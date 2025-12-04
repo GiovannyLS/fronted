@@ -17,6 +17,7 @@ export default function HistorialAlumnoModal({
   historial,
   COLORS,
   formatFecha,
+  recomendaciones,
 }) {
   if (!alumno) return null;
 
@@ -132,6 +133,90 @@ export default function HistorialAlumnoModal({
               ))}
             </div>
           </motion.div>
+
+          {/* Lista de tareas */}
+<div className="space-y-3">
+  {historial.length === 0 && (
+    <p className="text-sm text-gray-500">
+      Aún no hay tareas registradas para este alumno.
+    </p>
+  )}
+
+  {historial.map((h, idx) => (
+    <div
+      key={h.tarea_id || idx}
+      className="p-4 border rounded-lg bg-gray-50 hover:bg-gray-100"
+    >
+      <p className="font-semibold text-blue-700">{h.titulo}</p>
+      <p className="text-sm text-gray-600">
+        Grupo: <b>{h.grupo_nombre}</b>
+        <br />
+        Estado:{" "}
+        {h.completada ? (
+          <span className="text-green-600 font-bold">✔ Completada</span>
+        ) : (
+          <span className="text-red-600 font-bold">✖ Pendiente</span>
+        )}
+        <br />
+        Calificación:{" "}
+        <b>
+          {h.calificacion != null
+            ? `${h.calificacion} / ${h.puntos}`
+            : "Sin calificar"}
+        </b>
+        <br />
+        {h.fecha_completada && (
+          <>
+            Fecha de entrega: {formatFecha(h.fecha_completada)}
+          </>
+        )}
+      </p>
+    </div>
+  ))}
+</div>
+
+{/* === Juegos recomendados según el test TDAH === */}
+<div className="mt-4 border-t pt-4">
+  <h3 className="text-md font-semibold text-purple-700 mb-2">
+    🎯 Juegos recomendados para este alumno
+  </h3>
+
+  {!recomendaciones || recomendaciones.tiene_test === false ? (
+    <p className="text-sm text-gray-500">
+      Aún no hay un test TDAH registrado para este alumno. Aplica el test para recibir sugerencias.
+    </p>
+  ) : recomendaciones.recomendaciones.length === 0 ? (
+    <p className="text-sm text-gray-500">
+      El test no ha marcado indicadores elevados.
+    </p>
+  ) : (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      {recomendaciones.recomendaciones.map((juego) => (
+        <div
+          key={juego.tipo}
+          className="border rounded-lg p-3 bg-purple-50/60 border-purple-200"
+        >
+          <p className="text-sm font-bold text-purple-800">{juego.nombre}</p>
+          <p className="text-xs text-gray-700 mt-1">{juego.descripcion}</p>
+          {juego.recomendado_por && (
+            <p className="mt-1 text-[11px] text-purple-700">
+              Sugerido por:{" "}
+              {juego.recomendado_por
+                .map((cat) => {
+                  if (cat === "atencion_baja") return "dificultades de atención";
+                  if (cat === "impulsividad_alta") return "impulsividad elevada";
+                  if (cat === "memoria_debil") return "memoria de trabajo débil";
+                  if (cat === "emocional") return "regulación emocional";
+                  return cat;
+                })
+                .join(", ")}
+            </p>
+          )}
+        </div>
+      ))}
+    </div>
+  )}
+</div>
         </motion.div>
       )}
     </AnimatePresence>
